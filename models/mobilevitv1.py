@@ -8,10 +8,13 @@ def conv_2d(inp, oup, kernel_size=3, stride=1, padding=0, groups=1, bias=False, 
     conv = nn.Sequential()
     conv.add_module('conv', nn.Conv2d(inp, oup, kernel_size, stride, padding, bias=bias, groups=groups))
     if norm:
-        conv.add_module('BatchNorm2d', nn.BatchNorm2d(oup))
+        conv.add_module('norm', nn.BatchNorm2d(oup))
     if act:
-        conv.add_module('Activation', nn.SiLU())
-    return conv
+        conv.add_module('act', nn.SiLU())
+    
+    conv_block = nn.Sequential()
+    conv_block.add_module('block', conv)
+    return conv_block
 
 
 class InvertedResidual(nn.Module):
@@ -112,14 +115,20 @@ class MobileViTBlock(nn.Module):
         self.local_rep = nn.Sequential()
         self.local_rep.add_module('conv_3x3', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1))
         self.local_rep.add_module('conv_1x1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
-        
+        # # global representation
+        # self.global_rep = nn.Sequential()
+        # ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
+        # for i in range(attn_blocks):
+        #     ffn_dim = ffn_dims[i]
+        #     self.global_rep.add_module(f'TransformerEncoder_{i}', TransformerEncoder(attn_dim, ffn_dim, heads, dim_head))
+        # self.global_rep.add_module('LayerNorm', nn.LayerNorm(attn_dim, eps=1e-5, elementwise_affine=True))
         # global representation
-        self.global_rep = nn.Sequential()
         ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
+        self.global_rep = nn.Sequential()
         for i in range(attn_blocks):
             ffn_dim = ffn_dims[i]
-            self.global_rep.add_module(f'TransformerEncoder_{i}', TransformerEncoder(attn_dim, ffn_dim, heads, dim_head))
-        self.global_rep.add_module('LayerNorm', nn.LayerNorm(attn_dim, eps=1e-5, elementwise_affine=True))
+            self.global_rep.add_module(f'{i}', TransformerEncoder(attn_dim, ffn_dim, heads, dim_head))
+        self.global_rep.add_module(f'{attn_blocks}', nn.LayerNorm(attn_dim, eps=1e-5, elementwise_affine=True))
 
         self.conv_proj = conv_2d(attn_dim, inp, kernel_size=1, stride=1)
         self.fusion = conv_2d(2*inp, inp, kernel_size=3, stride=1)
@@ -248,7 +257,7 @@ class MobileViT(nn.Module):
         else:
             raise NotImplementedError
 
-        self.conv_0 = conv_2d(3, channels[0], kernel_size=3, stride=2)
+        self.conv_1 = conv_2d(3, channels[0], kernel_size=3, stride=2)
 
         self.layer_1 = nn.Sequential(
             InvertedResidual(channels[0], channels[1], stride=1, expand_ratio=mv2_exp_mult)
@@ -271,10 +280,11 @@ class MobileViT(nn.Module):
             MobileViTBlock(channels[5], attn_dim[2], ffn_multiplier, heads=4, dim_head=8, attn_blocks=3, patch_size=patch_size)
         )
         self.conv_1x1_exp = conv_2d(channels[-1], channels[-1]*last_layer_exp_factor, kernel_size=1, stride=1)
-        self.out = nn.Linear(channels[-1]*last_layer_exp_factor, num_classes, bias=True)
+        self.classifier = nn.Sequential()
+        self.classifier.add_module('fc', nn.Linear(channels[-1]*last_layer_exp_factor, num_classes, bias=True))
 
     def forward(self, x):
-        x = self.conv_0(x)
+        x = self.conv_1(x)
         x = self.layer_1(x)
         x = self.layer_2(x) 
         x = self.layer_3(x)
@@ -284,6 +294,6 @@ class MobileViT(nn.Module):
         
         # FF head
         x = torch.mean(x, dim=[-2, -1])
-        x = self.out(x)
+        x = self.classifier(x)
 
         return x

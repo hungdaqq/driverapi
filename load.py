@@ -1,25 +1,22 @@
 import torch
-from mobilevitv1 import MobileViT
-import collections
+import sys
+
+sys.path.append('models')
+from models.mobilevitv1 import MobileViT
 # Initialize the model
 model = MobileViT(
     image_size=(256,256),
     mode='xx_small',
-    num_classes=10,
+    num_classes=1000,
     patch_size=(2,2)
 )
 
 # Load the saved weights
 device = torch.device('cuda')
 
-state_dict = torch.load('mobilevit_xxs.pt', map_location=device)
-
-# If the state_dict is an ordered dictionary, convert it to a regular dictionary
-# if isinstance(state_dict, collections.OrderedDict):
-#     state_dict = {k: v for k, v in state_dict.items()}
-
+state_dict = torch.load('pretrained/mobilevit_xxs.pt', map_location=device)
+print(state_dict)
 # print(state_dict.keys())
 # Load the state dict into the model
-model.load_state_dict(state_dict,strict=False)
-
-print(model.state_dict())
+# model.load_state_dict(state_dict)
+# print(model.state_dict())
