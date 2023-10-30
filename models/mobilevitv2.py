@@ -2,16 +2,33 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class h_sigmoid(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_sigmoid, self).__init__()
+        self.relu6 = nn.ReLU6(inplace=inplace)
+
+    def forward(self, x):
+        return self.relu6(x + 3) / 6
+
+class h_swish(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_swish, self).__init__()
+        self.h_sigmoid = h_sigmoid(inplace=inplace)
+
+    def forward(self, x):
+        return x * self.h_sigmoid(x)
 
 def conv_2d(inp, oup, kernel_size=3, stride=1, padding=0, groups=1, bias=False, norm=True, act=True):
     conv = nn.Sequential()
     conv.add_module('conv', nn.Conv2d(inp, oup, kernel_size, stride, padding, bias=bias, groups=groups))
     if norm:
-        conv.add_module('BatchNorm2d', nn.BatchNorm2d(oup))
+        conv.add_module('norm', nn.BatchNorm2d(oup))
     if act:
-        conv.add_module('Activation', nn.SiLU())
-    return conv
-
+        conv.add_module('act', h_swish())
+    
+    conv_block = nn.Sequential()
+    conv_block.add_module('block', conv)
+    return conv_block
 
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio):
@@ -85,18 +102,25 @@ class MobileViTBlockv2(nn.Module):
         self.patch_h, self.patch_w = patch_size
 
         # local representation
+        # self.local_rep = nn.Sequential()
+        # self.local_rep.add_module('conv_3x3', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1, groups=inp))
+        # self.local_rep.add_module('conv_1x1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
         self.local_rep = nn.Sequential()
-        self.local_rep.add_module('conv_3x3', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1, groups=inp))
-        self.local_rep.add_module('conv_1x1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
-        
+        self.local_rep.add_module('0', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1, groups=inp))
+        self.local_rep.add_module('1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
         # global representation
+        # self.global_rep = nn.Sequential()
+        # ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
+        # for i in range(attn_blocks):
+        #     ffn_dim = ffn_dims[i]
+        #     self.global_rep.add_module(f'LinearAttnFFN_{i}', LinearAttnFFN(attn_dim, ffn_dim))
+        # self.global_rep.add_module('LayerNorm2D', nn.GroupNorm(num_channels=attn_dim, eps=1e-5, affine=True, num_groups=1))
         self.global_rep = nn.Sequential()
         ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
         for i in range(attn_blocks):
             ffn_dim = ffn_dims[i]
-            self.global_rep.add_module(f'LinearAttnFFN_{i}', LinearAttnFFN(attn_dim, ffn_dim))
-        self.global_rep.add_module('LayerNorm2D', nn.GroupNorm(num_channels=attn_dim, eps=1e-5, affine=True, num_groups=1))
-
+            self.global_rep.add_module(f'{i}', LinearAttnFFN(attn_dim, ffn_dim))
+        self.global_rep.add_module(f'{attn_blocks}', nn.GroupNorm(num_channels=attn_dim, eps=1e-5, affine=True, num_groups=1))
         self.conv_proj = conv_2d(attn_dim, inp, kernel_size=1, stride=1, padding=0, act=False)
 
     def unfolding_pytorch(self, feature_map):
@@ -159,7 +183,7 @@ class MobileViTv2(nn.Module):
         ffn_multiplier = 2
         mv2_exp_mult = 2
 
-        self.conv_0 = conv_2d(3, channels[0], kernel_size=3, stride=2)
+        self.conv_1 = conv_2d(3, channels[0], kernel_size=3, stride=2)
 
         self.layer_1 = nn.Sequential(
             InvertedResidual(channels[0], channels[1], stride=1, expand_ratio=mv2_exp_mult)
@@ -180,10 +204,11 @@ class MobileViTv2(nn.Module):
             InvertedResidual(channels[4], channels[5], stride=2, expand_ratio=mv2_exp_mult),
             MobileViTBlockv2(channels[5], attn_dim[2], ffn_multiplier, 3, patch_size=patch_size)
         )
-        self.out = nn.Linear(channels[-1], num_classes, bias=True)
+        self.classifier = nn.Sequential()
+        self.classifier.add_module('1',nn.Linear(channels[-1], num_classes, bias=True))
 
     def forward(self, x):
-        x = self.conv_0(x)
+        x = self.conv_1(x)
         x = self.layer_1(x)
         x = self.layer_2(x) 
         x = self.layer_3(x)
@@ -192,6 +217,6 @@ class MobileViTv2(nn.Module):
         
         # FF head
         x = torch.mean(x, dim=[-2, -1])
-        x = self.out(x)
+        x = self.classifier(x)
 
         return x

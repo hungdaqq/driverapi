@@ -3,6 +3,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class h_sigmoid(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_sigmoid, self).__init__()
+        self.relu6 = nn.ReLU6(inplace=inplace)
+
+    def forward(self, x):
+        return self.relu6(x + 3) / 6
+
+class h_swish(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_swish, self).__init__()
+        self.h_sigmoid = h_sigmoid(inplace=inplace)
+
+    def forward(self, x):
+        return x * self.h_sigmoid(x)
 
 def conv_2d(inp, oup, kernel_size=3, stride=1, padding=0, groups=1, bias=False, norm=True, act=True):
     conv = nn.Sequential()
@@ -10,12 +25,11 @@ def conv_2d(inp, oup, kernel_size=3, stride=1, padding=0, groups=1, bias=False, 
     if norm:
         conv.add_module('norm', nn.BatchNorm2d(oup))
     if act:
-        conv.add_module('act', nn.SiLU())
+        conv.add_module('act', h_swish())
     
     conv_block = nn.Sequential()
     conv_block.add_module('block', conv)
     return conv_block
-
 
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio):
@@ -115,6 +129,7 @@ class MobileViTBlock(nn.Module):
         self.local_rep = nn.Sequential()
         self.local_rep.add_module('conv_3x3', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1))
         self.local_rep.add_module('conv_1x1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
+        
         # # global representation
         # self.global_rep = nn.Sequential()
         # ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
