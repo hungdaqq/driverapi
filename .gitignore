@@ -1,0 +1,5 @@
+/env
+*.pt
+*.png
+*.jpg
+*.pyc
