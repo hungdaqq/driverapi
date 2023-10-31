@@ -27,7 +27,7 @@ plt.title('Training Loss Over Epochs', fontsize=16)
 plt.xlabel('Epochs', fontsize=14)
 plt.ylabel('Loss', fontsize=14)
 plt.xlim(0, max(epochs) + 1)
-plt.ylim(0, 0.3)  # Adding some padding for better visualization
+plt.ylim(0, 0.6)  # Adding some padding for better visualization
 # Adding grid
 plt.grid(True, linestyle='--', alpha=0.7)
 
