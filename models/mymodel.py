@@ -181,19 +181,10 @@ class MobileViTBlockv2(nn.Module):
         self.patch_h, self.patch_w = patch_size
 
         # local representation
-        # self.local_rep = nn.Sequential()
-        # self.local_rep.add_module('conv_3x3', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1, groups=inp))
-        # self.local_rep.add_module('conv_1x1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
         self.local_rep = nn.Sequential()
         self.local_rep.add_module('0', conv_2d(inp, inp, kernel_size=3, stride=1, padding=1, groups=inp))
         self.local_rep.add_module('1', conv_2d(inp, attn_dim, kernel_size=1, stride=1, norm=False, act=False))
         # global representation
-        # self.global_rep = nn.Sequential()
-        # ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
-        # for i in range(attn_blocks):
-        #     ffn_dim = ffn_dims[i]
-        #     self.global_rep.add_module(f'LinearAttnFFN_{i}', LinearAttnFFN(attn_dim, ffn_dim))
-        # self.global_rep.add_module('LayerNorm2D', nn.GroupNorm(num_channels=attn_dim, eps=1e-5, affine=True, num_groups=1))
         self.global_rep = nn.Sequential()
         ffn_dims = [int((ffn_multiplier*attn_dim)//16*16)] * attn_blocks
         for i in range(attn_blocks):

@@ -205,7 +205,7 @@ class MobileViTv2(nn.Module):
             MobileViTBlockv2(channels[5], attn_dim[2], ffn_multiplier, 3, patch_size=patch_size)
         )
         self.classifier = nn.Sequential()
-        self.classifier.add_module('1',nn.Linear(channels[-1], num_classes, bias=True))
+        self.classifier.add_module('1', nn.Linear(channels[-1], num_classes, bias=True))
 
     def forward(self, x):
         x = self.conv_1(x)
