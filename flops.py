@@ -50,12 +50,12 @@ num_classes = 10
 
 # Define your model architecture (make sure it matches the one used during training)
 
-# EffNetB0
-model = models.efficientnet_b0()
-model.classifier = nn.Sequential(
-    nn.Dropout(p=0.2, inplace=False),
-    nn.Linear(in_features=model.classifier[1].in_features, out_features=num_classes, bias=True)
-)
+# # EffNetB0
+# model = models.efficientnet_b0()
+# model.classifier = nn.Sequential(
+#     nn.Dropout(p=0.2, inplace=False),
+#     nn.Linear(in_features=model.classifier[1].in_features, out_features=num_classes, bias=True)
+# )
 
 # #MNASNET0_5
 # model = models.mnasnet0_5()
@@ -130,7 +130,9 @@ model.classifier = nn.Sequential(
 # fps = num_iterations / (end_time - start_time)
 # print(f"Frames Per Second (FPS): {fps}")
 
+model = torch.hub.load("coderx7/simplenet_pytorch:v1.0.0", "simplenetv1_small_m1_075", pretrained=True)
+model.classifier = nn.Linear(in_features=model.classifier.in_features, out_features=num_classes, bias=True)
 model.to(device)
-x = torch.randn(5, 3, 256, 256).to(device)
+x = torch.randn(5, 3, 224, 224).to(device)
 flop_analyzer = FlopCountAnalysis(model, x)
 print(flop_count_table(flop_analyzer))
