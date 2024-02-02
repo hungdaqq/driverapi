@@ -120,9 +120,9 @@ class TransformerEncoder(nn.Module):
         return x
 
 
-class MobileViTBlockV3_v1(nn.Module):
+class MobileViTBlock(nn.Module):
     def __init__(self, inp, attn_dim, ffn_multiplier, heads, dim_head, attn_blocks, patch_size):
-        super(MobileViTBlockV3_v1, self).__init__()
+        super(MobileViTBlock, self).__init__()
         self.patch_h, self.patch_w = patch_size
         self.patch_area = int(self.patch_h * self.patch_w)
 
@@ -236,7 +236,7 @@ class MobileViTBlockV3_v1(nn.Module):
         return x
 
 
-class MobileViTv3_v1(nn.Module):
+class MyModel(nn.Module):
     def __init__(self, image_size, mode, num_classes, patch_size=(2, 2)):  
         """
         Implementation of MobileViTv3 based on v1
@@ -282,15 +282,15 @@ class MobileViTv3_v1(nn.Module):
         )
         self.layer_3 = nn.Sequential(
             InvertedResidual(channels[2], channels[3], stride=2, expand_ratio=mv2_exp_mult),
-            MobileViTBlockV3_v1(channels[3], attn_dim[0], ffn_multiplier, heads=4, dim_head=8, attn_blocks=2, patch_size=patch_size)
+            MobileViTBlock(channels[3], attn_dim[0], ffn_multiplier, heads=4, dim_head=8, attn_blocks=2, patch_size=patch_size)
         )
         self.layer_4 = nn.Sequential(
             InvertedResidual(channels[3], channels[4], stride=2, expand_ratio=mv2_exp_mult),
-            MobileViTBlockV3_v1(channels[4], attn_dim[1], ffn_multiplier, heads=4, dim_head=8, attn_blocks=4, patch_size=patch_size)
+            MobileViTBlock(channels[4], attn_dim[1], ffn_multiplier, heads=4, dim_head=8, attn_blocks=4, patch_size=patch_size)
         )
         self.layer_5 = nn.Sequential(
             InvertedResidual(channels[4], channels[5], stride=2, expand_ratio=mv2_exp_mult),
-            MobileViTBlockV3_v1(channels[5], attn_dim[2], ffn_multiplier, heads=4, dim_head=8, attn_blocks=3, patch_size=patch_size)
+            MobileViTBlock(channels[5], attn_dim[2], ffn_multiplier, heads=4, dim_head=8, attn_blocks=3, patch_size=patch_size)
         )
         self.conv_1x1_exp = conv_2d(channels[-1], channels[-1]*last_layer_exp_factor, kernel_size=1, stride=1)
         self.classifier = nn.Sequential()

@@ -42,4 +42,3 @@ plt.legend(loc='upper right', fontsize=12)
 
 # Save the plot as an image file
 plt.savefig('beautiful_loss_plot.png', dpi=300)
-
