@@ -1,4 +1,4 @@
-# Driver API
+# Driver Behavior Monitoring
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/hungdaqq/driverapi/blob/main/LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/hungdaqq/driverapi)](https://github.com/hungdaqq/driverapi/issues)
@@ -9,7 +9,7 @@
 
 ## Description
 
-Driver API is a project that aims to provide a Deep learning model for managing drivers and their related information. This API can be used in various applications where tracking drivers and their activities is essential, such as delivery management systems, ride-hailing platforms, logistics applications, and more.
+Driver behavior monitoring is a project that aims to provide a Deep learning model for managing drivers and their related information. This API can be used in various applications where tracking drivers and their activities is essential, such as delivery management systems, ride-hailing platforms, logistics applications, and more.
 
 ## Features
 
@@ -19,8 +19,6 @@ Driver API is a project that aims to provide a Deep learning model for managing 
 ## Installation
 
 1. Clone the repository: `git clone https://github.com/hungdaqq/driverapi.git`
-
-
 
 2. Install dependencies: `pip install -r requirements.txt`
 
