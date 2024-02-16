@@ -18,13 +18,11 @@ Driver API is a project that aims to provide a Deep learning model for managing 
 
 ## Installation
 
-1. Clone the repository: 
+1. Clone the repository: `git clone https://github.com/hungdaqq/driverapi.git`
 
-`git clone https://github.com/hungdaqq/driverapi.git`
 
-2. Install dependencies:
 
-`pip install -r requirements.txt`
+2. Install dependencies: `pip install -r requirements.txt`
 
 3. Run `MyModel.ipynb` notebook.
 
