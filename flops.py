@@ -2,21 +2,19 @@ import sys
 import torch
 import torch.nn as nn
 from torchvision import models
-from transformers import AutoFeatureExtractor, ViTForImageClassification
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 sys.path.append('models')
 from models.mobilevitv1 import MobileViT
-from models.mobilevitv2 import MobileViTv2
-from models.mobilevitv3_1 import MobileViTv3_v1
+from models.MyModel import MyModel
 from fvcore.nn import FlopCountAnalysis, flop_count_table 
 
 image_size = (256,256)
-num_classes = 10
+num_classes = 16
 
 # Initialize the model
 
-# model = MobileViTv3_v1(
+# model = MyModel(
 #     image_size=image_size,
 #     mode='small',
 #     num_classes=num_classes,
@@ -130,8 +128,14 @@ num_classes = 10
 # fps = num_iterations / (end_time - start_time)
 # print(f"Frames Per Second (FPS): {fps}")
 
-model = torch.hub.load("coderx7/simplenet_pytorch:v1.0.0", "simplenetv1_small_m1_075", pretrained=True)
-model.classifier = nn.Linear(in_features=model.classifier.in_features, out_features=num_classes, bias=True)
+# model = torch.hub.load("coderx7/simplenet_pytorch:v1.0.0", "simplenetv1_small_m1_075", pretrained=True)
+# model.classifier = nn.Linear(in_features=model.classifier.in_features, out_features=num_classes, bias=True)
+
+import timm 
+
+model = timm.create_model('efficientvit_b1.r224_in1k', pretrained=True, num_classes=16)
+
+
 model.to(device)
 x = torch.randn(5, 3, 224, 224).to(device)
 flop_analyzer = FlopCountAnalysis(model, x)

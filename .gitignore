@@ -1,8 +1,8 @@
 /env
 *.pt
-*.png
-*.jpg
 *.pyc
 /.vscode
 *.zip
+*.pth
+*.png
 *.pth
